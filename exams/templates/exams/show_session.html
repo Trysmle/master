@@ -1,0 +1,258 @@
+<!DOCTYPE html>{% load static account_utils exam_utils %}
+{% include 'partials/call_out.html' %}
+<html lang="en">
+    <head>
+        {% include 'partials/common_meta_tags.html' %}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+        <title>Fudul | {{ session.exam.name }} session #{{ session.pk }}</title>
+        <script defer src="https://use.fontawesome.com/releases/v5.7.2/js/all.js" integrity="sha384-0pzryjIRos8mFBWMzSSZApWtPl/5++eIfzYmTgBBmXYdhvxPc+XcFEk+zJwDgWbP" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:500|Open+Sans:300,300i,400,400i,600,600i,700,700i&display=swap">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css" integrity="sha384-OHBBOqpYHNsIqQy8hL1U+8OXf9hH6QRxi0+EODezv82DfnZoV7qoHAZDwMwEJvSw" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha384-Q8BgkilbsFGYNNiDqJm69hvDS7NCJWOodvfK/cwTyQD4VQA0qKzuPpvqNER1UC0F" crossorigin="anonymous">
+        <link rel="stylesheet" href="{% static 'css/toastr.min.css' %}">
+        <link rel="stylesheet" href="{% static 'css/show_session.css' %}?v=2.9">
+        <style>
+        :root{
+          --primary-background-color: {{ user.profile.session_theme.primary_background_color|default:default_session_theme.primary_background_color }};
+          --secondary-background-color: {{ user.profile.session_theme.secondary_background_color|default:default_session_theme.secondary_background_color }};
+          --tertiary-background-color: {{ user.profile.session_theme.tertiary_background_color|default:default_session_theme.tertiary_background_color }};
+          --tooltip-background-color: {{ user.profile.session_theme.tooltip_background_color|default:default_session_theme.tooltip_background_color }};
+          --primary-font-color: {{ user.profile.session_theme.primary_font_color|default:default_session_theme.primary_font_color }};
+          --secondary-font-color: {{ user.profile.session_theme.secondary_font_color|default:default_session_theme.secondary_font_color }};
+          --tertiary-font-color: {{ user.profile.session_theme.tertiary_font_color|default:default_session_theme.tertiary_font_color }};
+          --tooltip-font-color: {{ user.profile.session_theme.tooltip_font_color|default:default_session_theme.tooltip_font_color }};
+          --highlight-background: {{ user.profile.session_theme.highlight_background|default:default_session_theme.highlight_background }};
+          --highlight-color: {{ user.profile.session_theme.highlight_color|default:default_session_theme.highlight_color }};
+          --table-active: {{ user.profile.session_theme.table_active|default:default_session_theme.table_active }};
+          --table-hover: {{ user.profile.session_theme.table_hover|default:default_session_theme.table_hover }};
+        }
+        </style>
+        <script src="https://cdn.jsdelivr.net/gh/HubSpot/offline@0.7.13/offline.min.js" integrity="sha384-j+x+boT4WuwTBsIjRFzuvvp3mtRa0WS5vqwUEKYPIeXjiadY+/b3aoecbkODKc68" crossorigin="anonymous"></script>
+        {% include 'partials/piwik.html' %}
+    </head>
+    <body data-session-is-examinable="{% if session.is_examinable %}true{% else %}false{% endif %}" data-session-mode="{{ session.session_mode }}" data-has-finished="false">
+    <div class="container-fluid" id="container">
+        <div id="top-info" class="row align-items-center">
+            <div class ="col-sm-3 text-sm-left text-center">
+              <a href="/" class="navbar-brand mt-2 mt-sm-0">
+                <img alt="Fudul logo" src="{% static 'img/logo-monkey.png' %}" class="img-fluid brand-logo">
+                <h2 class="brand-text">Fudul</h2></a>
+            </div>
+            <div class="col-sm-6 text-center"> <a target="_blank" href="{% url 'exams:create_session' category_slugs session.exam.pk %}">{{ session.exam.name }}</a> <span class="separator">•</span> Session id: <span id="session-pk">{{ session.pk }}</span> <span class="d-none d-sm-inline">({{ session.get_session_mode_display }})</span><br>Question id: <a target="_blank" href="{% url 'exams:list_revisions' category_slugs session.exam.pk current_question.pk %}" id="question-pk">{{ current_question.pk }}</a> </div>
+            <div class="col-sm-3 top-question-id font-weight-bold text-sm-right text-center my-2 mb-sm-0"><i class="fas fa-spinner fa-pulse fa-fw mr-1" id="question-loading" title="Loading session questions..."></i><div id="question-sequence"></div> of <div id="question-total"></div></div>
+        </div><!--top-info-->
+        <div id="top-options" class="row text-center">
+          <div class="col-auto pl-2 p-0">
+               <button class="option" id="contribute">
+                   <a data-placement="left" data-toggle="tooltip" title=" If you have any improvements on the question you can help us with, please submit it here.Your edits will be quickly available to public."> <i class="fas fa-pencil-alt"></i> Edit</a>
+               </button>
+          </div>
+           <div class="col-auto p-0 ml-auto">
+               <button id="mark" class="option" data-toggle="tooltip" data-html="true" data-title="<strong>Hint:</strong> you can also press <kbd>Alt+M</kbd> to toggle question mark.">
+                  <i id="mark-loading" class="fas fa-spinner fa-pulse fa-fw"></i>
+                  <i class="fas fa-flag"></i> Mark
+               </button>
+           </div>
+
+           <div class="col-auto p-0">
+               <button data-toggle="modal" data-target="#NormalValues" class="option">
+                  <i class="fas fa-flask"></i>  <span class="d-sm-inline d-none">Lab values</span>
+               </button>
+           </div>
+
+           <div class="col-auto p-0">
+               <button id="settings" class="option">
+                  <i class="fas fa-sliders-h"></i>  <span class="d-sm-inline d-none">Settings</span>
+               </button>
+           </div>
+           {% if session.is_examinable %}
+           <div class="col-auto p-0">
+               <button id="share" class="emphasized option">
+                  <i class="fas fa-share-alt"></i> <span class="d-sm-inline d-none">Share</span>
+               </button>
+           </div>
+           {% endif %}
+           <div class="col-auto pl-2">
+             <button id="keyboard-hint" class="option px-0" data-toggle="tooltip" data-html="true" data-title="<h5>Keyboard shortcuts</h5><p><strong>Hint: </strong>  In Fudul, you can go through a whole exam without touching the mouse!  Here is how:</p><table id='keyboard-instructions'><tr><th><kbd>→</kbd></th><td>Go to next question.</td></tr><tr><th><kbd>←</kbd></th><td>Go to previous question.</td></tr><tr><th><kbd>Ctrl</kbd>+<kbd>↑</kbd></th><td>Select previous choice.</td></tr><tr><th><kbd>Ctrl</kbd>+<kbd>↓</kbd></th><td>Select next choice.</td></tr><tr><th><kbd>Ctrl</kbd>+<kbd>Enter</kbd></th><td>Submit answer to current question.</td></tr><tr><th><kbd>Alt</kbd>+<kbd>M</kbd></th><td>Toggle mark on current question.</td></tr>{% if session.is_examinable %}<tr><th><kbd>Alt</kbd>+<kbd>U</kbd></th><td>Find an unsolved question in this session.</td></tr>{% endif %}</table>">
+                 <i data-toggle class="fas fa-keyboard ml-2"></i>
+             </button>
+           </div>
+        </div><!--top-options-->
+
+        <div id="question-row" class="row">
+          <div id="question-col" class="col-12 {% if is_shared %}col-md-8 col-lg-9{% else %}col-md-12{% endif %}">
+            <div class="row">
+              <div class="col-2 col-sm-1 d-lg-none mobile-slide next order-3"></div>
+              <div class="col-2 col-sm-1 d-lg-none mobile-slide previous order-1"></div>
+              <div id="question-container" class="col-8 col-sm-10 col-lg-12 order-2 px-0 px-lg-5 py-4">
+                <div id="question-pool">
+                  {% with question=current_question %}
+                   {% include 'exams/partials/session_question.html' %}
+                  {% endwith %}
+                </div>
+                <button type="button" id="submit" class="btn">Submit <i class="fas fa-angle-right"></i></button>
+                <div class="row">
+                  <div class="col-sm-8">
+                    <button class="btn btn-outline-primary" id="explain">Improve this explanation!</button>
+                  </div>
+                  <div class="col-sm-4">
+                    <button class="btn btn-outline-primary" id="add-mnemonics"><i class="fas fa-book"></i> Add a mnemonic!</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% if is_shared %}
+          <div id="sharing-sidebar" class="col-12 col-md-4 col-lg-3 text-center py-4">
+            <p class="mb-0">You are sharing this session with:</p>
+            {% for shared_session in shared_sessions %}
+            <div id="shared-session-{{ shared_session.pk }}" class="shared-session">
+              <p class="sharer-name mt-2 mb-1">{{ shared_session.submitter|get_user_credit:user }}</p>
+              <div class="row justify-content-center">
+                <div class="col-6 col-md-10">
+                  <div data-pk="{{ shared_session.pk }}" data-has-finished="{% if shared_session.get_has_finished %}true{% else %}false{% endif %}" class="progress" style="height: 5px;">
+                    <div class="progress-bar bg-success" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+                    <div class="progress-bar bg-danger" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+                    <div class="progress-bar bg-warning" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+            {% if session.session_mode == 'EXPLAINED' %}
+            <label class="mt-4" data-toggle="tooltip" data-placement="bottom" data-title="In addition to the number of questions answered (which is always shared), this will also include the percentages of correct, incorrect and skipped questions."><input id="share-results" type="checkbox" {% if session.share_results %}checked{% endif %}> Share my results.</label>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+
+        <div id="footer" class="row text-center font-weight-bold">
+          <div class="col-sm-6 text-sm-left order-2 order-sm-1">
+           <a id="back" class="float-left float-sm-none option" href="{% url 'exams:create_session' category_slugs session.exam.pk %}"><i class="fas fa-sign-out-alt"></i> Back</a>
+           <a id="results" class="float-left float-sm-none option" href="{% url 'exams:show_session_results' category_slugs session.exam.pk session.pk %}"><i class="far fa-check-square"></i> Results</a>
+           <button id="end" class="control-button float-left float-sm-none option"><i class="fas fa-sign-out-alt"></i> End</button>
+           <button id="contributors" class="control-button float-right float-sm-none option"><i class="fas fa-star"></i> Contributors</button>
+           <button id="help-me" class="control-button float-right float-sm-none option d-none d-sm-inline-block"><i class="fas fa-comment"></i> Get help</button>
+          </div>
+          <div class="col-sm-6 text-sm-right order-1 order-sm-2">
+            <div class="row justify-content-end no-gutters">
+              <div class="col-sm-auto col-5">
+                 <button data-action="previous" data-toggle="tooltip" data-html="true" data-title="<strong>Hint:</strong> You can also <span class='d-inline d-sm-none'>tap the left screen side</span><span class='d-none d-sm-inline'>press the left keyboard arrow (<kbd>←</kbd>)</span> to go back." id="previous" class="control-button float-left float-sm-none option"><i class="fas fa-chevron-circle-left"></i> Previous</button>
+              </div>
+              <div class="col-sm-auto col-2">
+                 <button id="open-navigation" data-toggle="tooltip" data-html="true" data-title="Give us a second!  We are loading all questions for you. <img height='17' alt='🐣' src='https://cdnjs.cloudflare.com/ajax/libs/emojione/2.2.7/assets/png/1f423.png'>" class="option"><i class="fas fa-list"></i> <span class="d-none d-sm-inline">Navigate</span></button>
+              </div>
+              <div class="col-sm-auto col-5">
+                 <button data-action="next" data-toggle="tooltip" data-html="true" data-title="<strong>Hint:</strong> You can also <span class='d-inline d-sm-none'>tap the right screen side</span><span class='d-none d-sm-inline'>press the right keyboard arrow (<kbd>→</kbd>)</span> to go next." id="next" class="control-button float-right float-sm-none option">Next <i class="fas fa-chevron-circle-right"></i></button>
+              </div>
+            </div>
+          </div>
+      </div><!--footer-->
+    </div><!--container-fluid-->
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js" integrity="sha384-5tfO0soa+FisnuBhaHP2VmPXQG/JZ8dLcRL43IkJFzbsXTXT6zIX8q8sIT0VSe2G" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.8.6/showdown.min.js" integrity="sha384-TXBgD2Ei2XcYWHMF62BvcQr1yg9mxQXVHUDXgEzdtPH1Ez1ru8YV23tF/8mrHj5n" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha384-Zm+UU4tdcfAm29vg+MTbfu//q5B/lInMbMCr4T8c9rQFyOv6PlfQYpB5wItcXWe7" crossorigin="anonymous"></script>
+        {% if is_shared %}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.2/dist/Chart.min.js" integrity="sha384-HD3oWWU02oY2e4gmUXEKY8D/aII2L2qM2+yU3/o/9H/dZdfhrSd6DLhQefqosgrj" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-colorschemes@0.4.0/dist/chartjs-plugin-colorschemes.min.js" integrity="sha384-0WA9QnomkGg92heCmsmXue8THsww3+rdpEDoyozGgPzvL+IMzm4MEYUChVAt+ay2" crossorigin="anonymous"></script>
+        {% endif %}
+        <script src="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.js" integrity="sha384-awkppW2vvGcqchV4/Wqk1nZPrGJakjrkv9gwXzll5JebuFQNSbzeKwYhqFDa/y00" crossorigin="anonymous"></script>
+        <script src="{% url 'js_reverse' %}?v=1.2"></script>
+        <script>
+// These are the global varaibles used later in the JavaScript-side
+// of show session.
+//
+// In SESSION_QUESTIONS, keys represent PKs, while values represent
+// global_sequences.
+window.SESSION_QUESTIONS = {{ session_question_pks|safe }};
+window.CATEGORY_SLUGS = '{{ category_slugs }}';
+window.USER_PK = {{ user.pk }};
+window.EXAM_PK = {{ session.exam.pk }};
+window.SESSION_PK = {{ session.pk }};
+window.SESSION_MODE = '{{ session.session_mode }}';
+window.SESSION_IS_EXAMINABLE = {% if session.is_examinable %}true{% else %}false{% endif %};
+window.USER_FIRST_NAME = "{{ user.profile.first_name }}";
+window.IS_SHARED = {%if is_shared %}true{% else %}false{% endif %};
+        </script>
+        <script src="{% static 'js/show_session.min.js' %}?v=1.5"></script>
+        {% include 'exams/partials/normal_values.html' %}
+
+        {% with modal_id='confirm-end-modal' is_small=True confirm_link=True modal_title="End session" modal_content="<i class='text-danger fas fa-sign-out-alt'></i> Are you sure you want to end this session, and mark unsubmitted questions as unsolved?" %}
+            {% include "exams/modals/common_modal_v4.html" %}
+        {% endwith %}
+
+        {% with modal_id='modify-question-modal' no_footer=True modal_title="Edit the question" %}
+             {% include "exams/modals/common_modal_v4.html" %}
+        {% endwith %}
+
+        {% with modal_id='explain-question-modal' no_footer=True modal_title="Explain the answer" %}
+            {% include "exams/modals/common_modal_v4.html" %}
+        {% endwith %}
+
+        {% with modal_id='correct-answer-modal' no_footer=True modal_title="Correct the answer" %}
+            {% include "exams/modals/common_modal_v4.html" %}
+        {% endwith %}
+
+        {% with modal_id='navigate-modal' no_footer=True modal_title="Navigate session" modal_content="<table id='navigation-table' class='table table-sm table-hover'><thead class='text-center thead-dark'><tr><th>Sequence</th><th class='d-sm-table-cell d-none'>ID</th><th class='d-sm-table-cell d-none'>Marked?</th><th>Answered?</th></tr></thead><tbody id='navigation-tbody'></tbody></table>" %}
+            {% include "exams/modals/common_modal_v4.html" %}
+        {% endwith %}
+
+        {% with modal_id='add-mnemonics-modal' no_footer=True modal_title="Add a mnemonic" %}
+            {% include "exams/modals/common_modal_v4.html" %}
+        {% endwith %}
+
+        <div class="d-none">
+          <div id="share-tooltip">
+            <p>Share your session with a friend.  By sharing, you will be answering the same questions, and tracking each other's progress:</p>
+            {% if session.parent_session %}
+              <input id="share-session-url" value="{{ request.scheme }}://{{ request.get_host }}{% url 'exams:share_session' category_slugs session.exam.pk session.parent_session.pk session.parent_session.secret_key %}" readonly>
+            {% else %}
+              <input id="share-session-url" value="{{ request.scheme }}://{{ request.get_host }}{% url 'exams:share_session' category_slugs session.exam.pk session.pk session.secret_key %}" readonly>
+            {% endif %}
+            <button data-trigger="manual" data-title="Copied!" data-toggle="tooltip" class="btn" id="share-session-copy" data-clipboard-target="#share-session-url">
+                <i class="fas fa-clipboard"></i>
+            </button>
+          </div>
+          <div id="setting-tooltip">
+            <p>You spend a lot of time in Fudul, so make it feel home!</p>
+            <select id="theme-select" class="form-control">
+              {% for session_theme in session_themes %}
+              <option data-primary-background-color="{{ session_theme.primary_background_color|default:default_session_theme.primary_background_color }}"
+                      data-secondary-background-color="{{ session_theme.secondary_background_color|default:default_session_theme.secondary_background_color }}"
+                      data-tertiary-background-color="{{ session_theme.tertiary_background_color|default:default_session_theme.tertiary_background_color }}"
+                      data-primary-font-color="{{ session_theme.primary_font_color|default:default_session_theme.primary_font_color }}"
+                      data-secondary-font-color="{{ session_theme.secondary_font_color|default:default_session_theme.secondary_font_color }}"
+                      data-tertiary-font-color="{{ session_theme.tertiary_font_color|default:default_session_theme.tertiary_font_color }}"
+                      data-highlight-background="{{ session_theme.highlight_background|default:default_session_theme.highlight_background }}"
+                      data-highlight-color="{{ session_theme.highlight_color|default:default_session_theme.highlight_color }}"
+                      data-table-active="{{ session_theme.table_active|default:default_session_theme.table_active }}"
+                      data-table-hover="{{ session_theme.table_hover|default:default_session_theme.table_hover }}"
+                      value="{{ session_theme.pk }}"
+                      {% if session_theme == user.profile.session_theme or user.profile.session_theme is None and session_theme.name == 'Ocean' %}selected{% endif %}>
+                      {{ session_theme.name }}
+              </option>
+              {% endfor %}
+            </select>
+            <button id="save-theme" class="mt-2 mb-1 btn btn-primary"><i class="far fa-save"></i> Save</button>
+          </div>
+          <div id="help-me-tooltip">
+            <a data-toggle="tooltip" data-html="true" title="<div style='direction: rtl;'> من حقك تعاتبني<br>من حقك تحاسبني<br>لكن مش من حقك<br>فى عواطفي تكدبني🎶</div>" target="_blank" rel="noreferrer noopener" href="https://soundcloud.com/yaya26/4sdgcoaj9r6p"><img src="{% static 'img/monerh/reach-out.png' %}" class="img-fluid"></a>
+            <p>Fudul is made better by your feedback and ideas!  Contact us right now:</p>
+            <div class="row justify-content-center">
+              <div class="col-12">
+                <a rel="noreferrer noopener" target="_blank" href="https://t.me/FudulBot"><i class="fab fa-2x fa-telegram"></i><br>Telegram Live Chat</a>
+              </div>
+            </div>
+            <div class="row justify-content-center mt-3 mb-2">
+              <div class="col-12">
+                <a href="mailto:support@fudulbank.com"><i class="fas fa-2x fa-envelope"></i><br>Support Email</a>
+              </div>
+            </div>
+          </div>
+        </div>
+    </body>
+</html>

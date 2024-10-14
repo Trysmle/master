@@ -1,0 +1,139 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}Fudul | {{ group.name }} indicators{% endblock %}
+
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/1.31.2/plotly.min.js" integrity="sha384-pEbvKAAHroDnU/rb2+IiUrslRtrsAGTaQNZjaFWCY3d/h5FlaWxqMkhh8MX4m0dQ" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.19.3/moment.min.js" integrity="sha384-8xuC0/BWqiPX72DT7LJqj+QiH5eYVT5KsUOewB/DmXi7KPPEdt4Td3xu3lg+slER" crossorigin="anonymous"></script>
+{% endblock %}
+
+{% block header_title %}
+<h1>{{ group.name }} indicators</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+      <li class="breadcrumb-item"><a href="{% url 'index' %}">Home page</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'show_indicator_index' %}">Indicators</a></li>
+			<li class="breadcrumb-item active">{{ group.name }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+	<div class="card-body">
+		<div class="card-block">
+      <p>These two graphs track <strong>active users</strong> (defined as: users who created at least one new session) and <strong>average answers</strong> (defined as: answers submitted with a choice, i.e. not skipped, divided by number of active users).  This only includes users in the {{ group.name }} at {{ group.institution.name }} and is broken down per level.</p>
+      <div id="group-user-plot" style="width:100%; height:600px;"></div>
+      <div id="group-answer-plot" style="width:100%; height:600px;"></div>
+      <div id="group-contributor-plot" style="width:100%; height:600px;"></div>
+      <div id="group-contribution-plot" style="width:100%; height:600px;"></div>
+		</div><!--card-block-->
+	</div><!--card-body-->
+</div><!--card-->
+{% endblock %}
+{% block customscript %}
+  <script>
+
+levels = { {% for level in group.level_set.all %}{{ level.pk }}: {name: '{{ level.name }}', complete_number: {{ level.complete_number|default:'null'}} },{% endfor %}
+}
+
+  Plotly.d3.csv("{% url 'get_privileged_file' csv_filename %}", function(err, rows){
+
+{% include 'indicators/partials/shared_functions.js' %}
+
+      function get_user_count_hover(count_field, level_pk){
+        if (level_pk){
+          count_field = count_field + '_' + level_pk;
+        }
+
+        return rows.map(function(row) {
+          end_date = moment(row['date'])
+          start_date = moment(row['date']).subtract(30, 'days')
+
+          // Calculate change
+          change_percentage = get_change_percentage(count_field, row)
+          if (levels[level_pk].complete_number){
+            penetration_percentage = (row[count_field] / levels[level_pk].complete_number) * 100
+            penetration_percentage = penetration_percentage.toPrecision(2)
+            penetration_str = penetration_percentage + "% penetration in " + levels[level_pk].name + "<br>"
+          } else {
+            penetration_str = ""
+          }
+
+          end_date_str = end_date.format('DD MMM')
+          start_date_str = start_date.format('DD MMM')
+          return '<span style=\'font-weight: 700; text-decoration: underline;\'>' + start_date_str + '‒' + end_date_str + '</span><br>' + row[count_field] + ' (' + change_percentage + '%)<br>' + penetration_str
+        });
+      }
+
+      function stackedArea(data) {
+      	for(var i=1; i<data.length; i++) {
+      		for(var j=0; j<(Math.min(data[i]['y'].length, data[i-1]['y'].length)); j++) {
+        			data[i]['y'][j] += data[i-1]['y'][j];
+      		}
+      	}
+      	return data;
+      }
+
+      user_data = [];
+      answer_data = [];
+      contributor_data = [];
+      contribution_data = [];
+
+      dates = unpack('date');
+
+      for (level_pk in levels){
+        var trace = {
+          fill: 'tonextx',
+          name: levels[level_pk].name,
+          x: dates,
+          y: unpack('user_count_' + level_pk, true),
+          hoverinfo: 'text+name',
+          hovertext: get_user_count_hover('user_count', level_pk),
+        }
+        user_data.push(trace);
+      }
+
+      for (level_pk in levels){
+        var trace = {
+          fill: 'tonextx',
+          name: levels[level_pk].name,
+          x: dates,
+          y: unpack('answer_avg_' + level_pk, true),
+          hoverinfo: 'text+name',
+          hovertext: get_hover('answer_avg', level_pk),
+        }
+        answer_data.push(trace);
+      }
+
+      for (level_pk in levels){
+        var trace = {
+          fill: 'tonextx',
+          name: levels[level_pk].name,
+          x: dates,
+          y: unpack('contributor_count_' + level_pk, true),
+          hoverinfo: 'text+name',
+          hovertext: get_hover('contributor_count', level_pk),
+        }
+        contributor_data.push(trace);
+      }
+
+      for (level_pk in levels){
+        var trace = {
+          fill: 'tonextx',
+          name: levels[level_pk].name,
+          x: dates,
+          y: get_contribution_data(level_pk),
+          hoverinfo: 'text+name',
+          hovertext: get_contribution_hover(level_pk),
+        }
+        contribution_data.push(trace);
+      }
+
+      Plotly.newPlot('group-user-plot', stackedArea(user_data), {title: "{{ group.name}} user plot"});
+      Plotly.newPlot('group-answer-plot', stackedArea(answer_data), {title: "{{ group.name}} answer-depth plot"});
+
+      Plotly.newPlot('group-contributor-plot', stackedArea(contributor_data), {title: "{{ group.name}} contributor plot"});
+      Plotly.newPlot('group-contribution-plot', stackedArea(contribution_data), {title: "{{ group.name}} contribution plot"});
+  })
+    </script>
+
+{% endblock %}

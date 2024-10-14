@@ -1,0 +1,432 @@
+body, html, #container{
+    height: 100%
+}
+
+body{
+    background: var(--primary-background-color);
+    color: var(--primary-font-color);
+    font-size: 17px;
+    line-height: 1.8;
+    font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-weight: 400;
+}
+
+#top-info, #footer, #sharing-sidebar{
+  background-color: var(--secondary-background-color);
+  color: var(--secondary-font-color);
+}
+
+.question-body .check svg,
+.question-body .correct svg{
+  visibility: hidden;
+}
+
+body[data-session-is-examinable="false"] .check svg,
+body[data-session-is-examinable="false"] [data-has-correction="false"]:not([data-is-right="true"]) .correct svg,
+body:not([data-session-mode="UNEXPLAINED"]) .question-body[data-was-solved="true"] .check svg,
+body:not([data-session-mode="UNEXPLAINED"]):not(.unauthenticated) .question-body[data-was-solved="true"] [data-has-correction="false"]:not([data-is-right="true"]) .correct svg,
+body[data-session-mode="UNEXPLAINED"][data-has-finished="true"] .question-body[data-was-solved="true"] .check svg,
+body[data-session-mode="UNEXPLAINED"][data-has-finished="true"] .question-body[data-was-solved="true"] [data-has-correction="false"]:not([data-is-right="true"]) .correct svg{
+  visibility: visible !important;
+}
+
+#results, #end, #back{
+  display: none;
+}
+
+body[data-session-is-examinable="false"] #back,
+body[data-session-is-examinable="true"][data-has-finished="true"] #results,
+body[data-session-is-examinable="true"][data-has-finished="false"] #end{
+  display: inline-block;
+}
+
+/* Bootstrap tries to reset the font; let's ignore it*/
+.tooltip{
+  font-family: inherit;
+}
+
+.tooltip.bs-tooltip-top .arrow::before{
+  border-top-color: var(--tooltip-background-color);
+}
+
+.tooltip.bs-tooltip-bottom .arrow::before{
+  border-bottom-color: var(--tooltip-background-color);
+}
+
+.tooltip.hint.bs-tooltip-right .arrow::before{
+  border-right-color: var(--secondary-background-color);
+}
+
+.tooltip.hint .tooltip-inner{
+  background: var(--secondary-background-color);
+}
+
+.tooltip.hint .tooltip-inner{
+  color: var(--primary-font-color);
+}
+
+#top-info{
+    font-size: 12pt;
+    border-bottom: 1px solid var(--secondary-background-color);
+}
+
+.top-question-id {
+    line-height: 15px;
+}
+
+.option{
+  cursor: pointer;
+  display: inline-block;
+  padding: 0 10px;
+  background: transparent;
+  border: 0;
+  font-weight: 700;
+  /* For mobile devices */
+  height: auto;
+}
+
+#open-navigation{
+  cursor: not-allowed;
+}
+
+.table-active, .table-hover .table-active:hover{
+  background-color: var(--table-active);
+}
+
+.table-hover tbody tr:hover{
+  background-color: var(--table-hover);
+}
+
+.choice-table tr[data-choice-pk] td{
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+@media (min-width: 576px) {
+  #footer .option{
+    height: 38px;
+  }
+  #top-options .option{
+    height: 32px;
+  }
+  .choice-table tr[data-choice-pk] td{
+    padding: 0;
+  }
+  .choice-table{
+    line-height: inherit !important;
+  }
+}
+
+.separator{
+    color: yellow;
+}
+
+.sharer-name, #sharing-sidebar label{
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+#top-options {
+    background-color: var(--tertiary-background-color);
+    border-bottom: 1px solid var(--primary-background-color);
+    line-height: 32px;
+}
+
+#top-options .option{
+  color: var(--tertiary-font-color);
+  font-weight: 400;
+}
+
+.tooltip-inner {
+    background-color: var(--tooltip-background-color);
+    color: var(--tooltip-font-color);
+}
+
+#mark.marked{
+    font-weight: 700;
+    padding: 0 9px;
+    color: var(--highlight-background);
+}
+
+#footer {
+    line-height: 36px;
+    font-size: 12pt;
+    bottom: 0;
+    position: fixed;
+    border-top: 1px solid var(--primary-background-color);
+    width: 100%;
+}
+
+/* Styling the exam name and "results" (which is a direct link) */
+#top-info a, .option, a.option, #help-me-tooltip a{
+    color: var(--secondary-font-color);
+}
+
+#top-info a:hover, a.option:hover, #help-me-tooltip a:hover{
+    text-decoration: none;
+}
+
+.form-control, .modal-content, .modal-content .close, .navigate-row{
+    color: var(--primary-font-color);
+    background-color: var(--primary-background-color);
+}
+
+#contributors{
+  cursor:zoom-in;
+}
+
+.strike{
+    text-decoration: line-through;
+}
+
+td.check, td.correct{
+  width: 17px;
+}
+
+.highlight {
+    background: var(--highlight-background);
+    color: var(--highlight-color);
+}
+
+body[data-session-is-examinable="false"] .highlight,
+body[data-session-is-examinable="true"] .question-body[data-was-solved="false"] .highlight{
+    cursor: pointer;
+}
+
+.choice-table{
+  line-height: 1.5;
+}
+
+.correct, .check, .option, .navbar-brand, .mobile-slide{
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.question-choice {
+    margin-right: 10px !important;
+    word-wrap: break-word;
+}
+
+#submit, #explain, #add-mnemonics{
+    margin-top: 20px;
+}
+#add-mnemonics{
+    margin-left: 2%;
+}
+
+#submit{
+    margin-left: 9px;
+    background: #0067A9;
+    color: var(--secondary-font-color);
+    font-size: 12pt;
+    font-family: Arial, Verdana, Helvetica;
+}
+
+.tooltip-container, #mark-loading, .explanation-container, #explain, #submit, #contribute, #add-mnemonics,.answer-correction-tooltip-container,.mnemonics-container{
+  display: none;
+}
+
+#question-total, #question-sequence{
+  display: inline-block;
+}
+
+.question-body{
+  display: none;
+}
+
+.question-body.show{
+  display: block;
+}
+
+.question-body .choice-table tbody.unprepared,
+#question-pool:not(.choices-were-animated) .choice-table tbody{
+  visibility: hidden;
+}
+
+.explanation-container,.mnemonics-container{
+  margin-top: 20px;
+}
+
+.explanation-reference-header{
+  font-size: 1.2rem;
+}
+
+figure img{
+  width: 250px;
+  cursor: zoom-in;
+}
+
+figcaption{
+  font-size: 0.7rem;
+}
+
+.brand-logo{
+  vertical-align: sub;
+}
+.brand-text{
+  display: inline;
+  padding-left: 10px;
+  font-family: "Montserrat", Georgia, "Times New Roman", Times, serif;
+  letter-spacing: 1px;
+  font-size: 1.74rem;
+  font-weight: 500;
+}
+
+.question-body.show, #submit{
+  z-index: 2;
+  position: relative;
+}
+
+#top-info, #top-options, #footer{
+  z-index: 3;
+}
+
+#top-info, #top-options{
+  position: relative;
+}
+
+#normal-values{
+    align-items: center;
+}
+
+.answer-correction-header{
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-align: center;
+  align-items: center;
+  -ms-flex-pack: justify;
+  justify-content: space-around;
+  padding: 5px;
+}
+
+.answer-correction-header .title{
+  margin-bottom: 0
+}
+
+.answer-correction-header .delete-correction{
+  padding: 5px;
+  margin: -5px -5px -5px auto;
+  background: 0 0;
+  border: 0;
+}
+
+/*Any list within a tooltip should be left-aligned*/
+.tooltip-inner ul{
+  text-align: left;
+}
+
+/*By default, Bootstrap has a maximum of 200px, but we look prettier at 250px*/
+.tooltip-inner{
+  max-width: 250px
+}
+.circle {
+   width: 20px;
+   height: 20px;
+   background: lightblue;
+   -moz-border-radius: 10px;
+   -webkit-border-radius: 10px;
+   border-radius: 10px;
+   text-align: center;
+   line-height:15px;
+   color: var(--primary-font-color);
+   float: right;
+
+}
+
+#keyboard-instructions th{
+  text-align: center;
+}
+
+#keyboard-instructions td{
+  text-align: left;
+}
+
+#keyboard-instructions th, #keyboard-instructions td{
+  padding-bottom: 0.5rem;
+}
+
+@keyframes emphasized-hint {
+   0% {
+    color: var(--tertiary-font-color);
+   }
+   50% {
+    color: var(--tertiary-font-color);
+   }
+   100% {
+    color: var(--highlight-background);
+   }
+}
+.emphasized{
+   animation: emphasized-hint 3s ease-in infinite alternate
+}
+
+.presneter-stat-container{
+  display: none;
+  max-width: 100%;
+  width: 600px;
+}
+
+/* == Start of selection hint ==  */
+/* This code below was adapted from https://github.com/Kikobeats/tweet-selection */
+@keyframes pop-upwards {
+  0% {
+    transform: matrix(.97, 0, 0, 1, 0, 12);
+    opacity: 0;
+  }
+
+  20% {
+    transform: matrix(.99, 0, 0, 1, 0, 2);
+    opacity: .7;
+  }
+
+  40% {
+    transform: matrix(1, 0, 0, 1, 0, -1);
+    opacity: 1;
+  }
+
+  70% {
+    transform: matrix(1, 0, 0, 1, 0, 0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: matrix(1, 0, 0, 1, 0, 0);
+    opacity: 1;
+  }
+}
+
+.selection-hint {
+  border-radius: 4px;
+  margin-left: -35px;
+  background: #14485f;
+  color: #FFF;
+  display: block;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: background 180ms ease-out;
+  opacity: 0;
+  animation: pop-upwards 180ms forwards linear;
+  font-size: 2.1rem;
+  line-height: 0;
+  z-index: 4;
+}
+
+.selection-hint a {
+  color: inherit;
+}
+
+.selection-hint svg:hover {
+  background: #55acee;
+}
+
+.selection-hint a:focus, .selection-hint a:hover  {
+  text-decoration: none;
+  color: inherit;
+}
+.selection-hint p{
+text-align: center;
+}
+/* == End of selection hint ==  */
